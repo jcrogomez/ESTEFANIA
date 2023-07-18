@@ -1,13 +1,12 @@
-import pandas as pd
-import numpy as np
-from scipy import optimize
-
+# Import dependencies
 import os
 import sys
+import numpy as np
+import pandas as pd
+from scipy import optimize
 
 ## Ingreso de variables
 arglist = sys.argv
-print(arglist)
 
 ## Funciones
 def iones():
@@ -16,15 +15,16 @@ def iones():
     dict_csv = { os.path.basename(x).split('.')[0]: path + '/' + x for x in os.listdir(path) if x.endswith('.csv') }
     ion_df = pd.read_csv(dict_csv[nombre]).fillna(0)
 
-    indice = ion_df['GreenHow']
+    indice = ion_df['Nombre']
 
     copy = ion_df.copy()
-    del copy['GreenHow']
-    del copy['ingredientes']
+    del copy['Nombre']
+    del copy['Ingredientes']
+    del copy['Proveedor']
 
     A = copy.to_numpy()
     AT = A.transpose()
-    
+
     return ion_df, indice, A, AT
 
 
@@ -40,7 +40,6 @@ def objetivo(nombre):
 
 
 def corrida(indice, constraints, matriz):
-
     lista = []
     index = []
 
@@ -50,59 +49,49 @@ def corrida(indice, constraints, matriz):
             lista.append(matriz[i])
             index.append(indice[i])
         if constraints[i] == 0:
-            print('No se utilizara : ' + indice[i])
+            print('No se utilizará: ' + indice[i])
     A = np.array(lista)
 
     AT = A.transpose()
 
     return A, AT, index
 
-
 def loss(x0, k, A):
     lista = [sum((k - np.dot(x0, A))**2)/k.shape[0] for i in range(x0.shape[0])]
-    
     return sum(lista)
 
-
 def estefania(variedad, guardar=False):
-
+    # Read objective
     df, indice, matriz, trans = iones()
 
-    elementos = list(df.iloc[0][2:].index)
-
+    # Read the objective file
     target, const = objetivo(variedad)
 
+    # Adjust our run as a x vector to optimize
     A, AT, nuevoindice = corrida(indice, const, matriz)
-
     x = np.random.rand(A.shape[0])
 
-    loss(x, target, A)
-
-    res = optimize.minimize(loss, x0=x, args=(target, A), options={'disp': True}, 
+    # Optimize
+    res = optimize.minimize(loss, x0=x, args=(target, A), options={'disp': False}, 
                         method='L-BFGS-B', bounds=[(0,1)]*x.shape[0])
 
     # resultados
-    d = pd.DataFrame({'fertilizante': nuevoindice, 'g/l': res.x})
+    d = pd.DataFrame({'Fertilizante': nuevoindice, 'g/l': res.x})
 
     # % de error
-
     error = (target - np.dot(res.x, A))*100/1
-
     err = [round(num, 2) for num in error]
-
     e = pd.DataFrame({'error': err})
 
     resultados = d.join(e)
-
-    if guardar == 'True':
-        # guardar resultados
+    if guardar == 'True' or guardar == 'true' or guardar == '1':
         destino = os.getcwd() + '/outputs/'
-        resultados.to_csv(destino + 'target' + variedad + '.csv', index=False)
-
-
+        resultados.to_csv(destino + variedad + '.csv', index=False)
     return resultados
 
 
-##Run on the command line with the arguments: name_of_input, save(true or false)
-estefania(arglist[1], arglist[2])
+#Run on the command line with the arguments: name_of_input, save(true or false)
+if(len(arglist)>2): estefania(arglist[1], arglist[2])
+elif(len(arglist)>1): estefania(arglist[1])
+else: print('Faltan especificar el nombre del archivo y si se desea guardar el archivo de salida')
 
