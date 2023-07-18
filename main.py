@@ -31,12 +31,13 @@ def iones():
 def objetivo(nombre):
     path = os.getcwd() + '/inputs/'
     dict_csv = { os.path.basename(x).split('.')[0]: path + '/' + x for x in os.listdir(path) if x.endswith('.csv') }
-    df = pd.read_csv(dict_csv[nombre]).fillna(0)
+    if(dict_csv.get(nombre)!=None):
+        df = pd.read_csv(dict_csv[nombre]).fillna(0)
 
-    target = df.iloc[0].to_numpy()[2:]
-    const = df['VALOR'].to_numpy()[1:]
-
-    return target, const
+        target = df.iloc[0].to_numpy()[2:]
+        const = df['VALOR'].to_numpy()[1:]
+        return target, const
+    else: return None, None
 
 
 def corrida(indice, constraints, matriz):
@@ -66,28 +67,32 @@ def estefania(variedad, guardar=False):
 
     # Read the objective file
     target, const = objetivo(variedad)
+    if(target is not None):
+        # Adjust our run as a x vector to optimize
+        A, AT, nuevoindice = corrida(indice, const, matriz)
+        x = np.random.rand(A.shape[0])
 
-    # Adjust our run as a x vector to optimize
-    A, AT, nuevoindice = corrida(indice, const, matriz)
-    x = np.random.rand(A.shape[0])
+        # Optimize
+        res = optimize.minimize(loss, x0=x, args=(target, A), options={'disp': False}, 
+                            method='L-BFGS-B', bounds=[(0,1)]*x.shape[0])
 
-    # Optimize
-    res = optimize.minimize(loss, x0=x, args=(target, A), options={'disp': False}, 
-                        method='L-BFGS-B', bounds=[(0,1)]*x.shape[0])
+        # resultados
+        d = pd.DataFrame({'Fertilizante': nuevoindice, 'g/l': res.x})
 
-    # resultados
-    d = pd.DataFrame({'Fertilizante': nuevoindice, 'g/l': res.x})
+        # % de error
+        error = np.divide((target - np.dot(res.x, A))*100, target, out=np.zeros_like(target), where=target!=0)
+        err = [round(num, 2) for num in error]
+        e = pd.DataFrame({'error': err})
 
-    # % de error
-    error = (target - np.dot(res.x, A))*100/1
-    err = [round(num, 2) for num in error]
-    e = pd.DataFrame({'error': err})
-
-    resultados = d.join(e)
-    if guardar == 'True' or guardar == 'true' or guardar == '1':
-        destino = os.getcwd() + '/outputs/'
-        resultados.to_csv(destino + variedad + '.csv', index=False)
-    return resultados
+        resultados = d.join(e)
+        if guardar == 'True' or guardar == 'true' or guardar == '1':
+            destino = os.getcwd() + '/outputs/'
+            resultados.to_csv(destino + variedad + '.csv', index=False)
+        return resultados
+    else: 
+        error = 'No se encontró el archivo con el nombre ' + variedad
+        print(error)
+        return {error: error}
 
 
 #Run on the command line with the arguments: name_of_input, save(true or false)
