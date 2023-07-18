@@ -92,7 +92,7 @@ app.whenReady().then(() => {
         return new Promise(function (resolve) {
           fs.createReadStream(path.join('templates', 'iones.csv'))
           .pipe(parse({ delimiter: ",", from_line: 1 }))
-          .on("data", row => resolve(row.slice(3,-1)))
+          .on("data", row => resolve(row.slice(3)))
           .on("error", () => console.log(error.message));
         });
       } catch (error) {

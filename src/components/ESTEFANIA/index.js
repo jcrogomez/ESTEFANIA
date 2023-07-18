@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { primaryColors, secondaryColors } from "../../utils/colors";
 import { InfoCircleOutlined, SettingOutlined } from '@ant-design/icons';
-import { Collapse, ConfigProvider, Tooltip, Button, theme, Row, Col, Modal, Select, InputNumber, Form, Spin } from 'antd';
+import { 
+  Collapse, 
+  ConfigProvider, 
+  Tooltip, 
+  Button, 
+  theme, 
+  Row, 
+  Col, 
+  Modal, 
+  Select, 
+  InputNumber, 
+  Form, 
+  Spin, 
+  Table,
+  Divider
+} from 'antd';
 
 const { Panel } = Collapse;
 
@@ -43,11 +58,29 @@ export default function ESTEFANIA() {
 
   useEffect(() => {
     if(result.length>1) {
+      const columns1 = [
+        {
+          title: 'Fuente',
+          dataIndex: 'source',
+          key: 'source',
+        },
+        {
+          title: 'ppm',
+          dataIndex: 'ppm',
+          key: 'ppm',
+        }
+      ];
+      const dataSource1 = result.map((item, index) => {if(item[1]>0) return {key: index, source: item[0], ppm: parseFloat(item[1]*1000).toFixed(2)}}).filter(n => n);
+      const dataSource2 = result.map((item) => item[2]).filter(n => n).map((item, index) => <Col key={index} span={6}>{ion[index]}: {item} %</Col>);
+
       modal.success({
+        width: '90%',
         title: 'Solución optimizada con éxito',
-        content: <ul>
-                  {result.map((item, index) => <li key={index}>{item[0]} {parseFloat(item[1]*1000).toFixed(2)} ppm</li>)}
-                </ul>
+        content: <>
+                    <Table dataSource={dataSource1} columns={columns1} />
+                    <Divider>Error</Divider>
+                    <Row>{dataSource2}</Row>
+                 </>
       });
     }
   }, [result]);
