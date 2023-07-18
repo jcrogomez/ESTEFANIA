@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { primaryColors, secondaryColors } from "../../utils/colors";
-import { InfoCircleOutlined, SettingOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined, DeleteOutlined } from '@ant-design/icons';
 import { 
   Collapse, 
   ConfigProvider, 
@@ -11,6 +11,7 @@ import {
   Col, 
   Modal, 
   Select, 
+  Input,
   InputNumber, 
   Form, 
   Spin, 
@@ -50,6 +51,16 @@ export default function ESTEFANIA() {
   const [ isLoading, setIsLoading ] = useState(false);
   const [ activeKey, setActiveKey ] = useState(['1', '2']);
   const [ result, setResult ] = useState([]);
+  const [ chargeResult, setChargeResult ] = useState('');
+
+  const reset = () => {
+    setSources([]);
+    setIsLoading(false);
+    setActiveKey(['1', '2']);
+    setResult([]);
+    setChargeResult('');
+    form.resetFields();
+  };
 
   useEffect(() => {
     window.api.readTemplate().then((data) => setTemplate(data));
@@ -58,6 +69,8 @@ export default function ESTEFANIA() {
 
   useEffect(() => {
     if(result.length>1) {
+      setChargeResult('test');
+
       const columns1 = [
         {
           title: 'Fuente',
@@ -84,9 +97,7 @@ export default function ESTEFANIA() {
       });
     }
   }, [result]);
-  /*
- 
-  */
+
   // Callbacks
   const showInfo = () => {
     modal.info({
@@ -103,18 +114,6 @@ export default function ESTEFANIA() {
                  <div>Si necesitas más detalles o tienes preguntas específicas, asegúrate de consultar la documentación completa de ESTEFANIA en nuestro<a target="_blank" href="https://github.com/jcrogomez/ESTEFANIA"> repositorio.</a></div> 
                  <div><br></br>En un futuro próximo será posible añadir fuentes de nutrientes diferentes a las que tenemos configuradas, deberás conocer los aportes específicos de cada ion según el manual del proveedor. Esto garantizará resultados más precisos y confiables.</div>
                </div>
-    });
-  };
-
-  const showSettings = async () => {
-    const inputFiles = await window.api.readInput();
-    
-    const request = modal.info({
-      width: '90%',
-      title: 'Configuraciones avanzadas',
-      content: <>
-                  Pronto tendremos más funciones disponibles
-               </>
     });
   };
 
@@ -157,27 +156,139 @@ export default function ESTEFANIA() {
         content: 'Debes seleccionar al menos 4 fuentes para poder utilizar el optimizador'
       });
     }
-    
   };
-  
+
+  const save = () => {
+    let filename = '';
+    const request = modal.confirm({
+      title: 'Selecciona el nombre del archivo',
+      content: <Input placeholder='prueba1' onChange={(e) => filename = e.target.value}></Input>,
+      footer: <div style={{textAlign:'center', margin:'1rem'}}>
+                <Button 
+                  type="primary" 
+                  onClick={async () => {
+                    const status = await window.api.saveFile(filename);
+                    request.destroy();
+                    if(status===true) reset();
+                    else modal.error({title: 'Elige un nombre de archivo válido', content: 'No ingresaste ningún nombre para tu archivo'});
+                  }}>
+                    Aceptar
+                </Button>
+              </div>
+    });
+  };
+
+  const seeResults = () => {
+    if(chargeResult==='test'){
+      const columns = [
+        {
+          title: 'Fuente',
+          dataIndex: 'source',
+          key: 'source',
+        },
+        {
+          title: 'ppm',
+          dataIndex: 'ppm',
+          key: 'ppm',
+        }
+      ];
+      const dataSource1 = result.map((item, index) => {if(item[1]>0) return {key: index, source: item[0], ppm: parseFloat(item[1]*1000).toFixed(2)}}).filter(n => n);
+      const dataSource2 = result.map((item) => item[2]).filter(n => n).map((item, index) => <Col key={index} span={6}>{ion[index]}: {item} %</Col>);
+
+      modal.success({
+        width: '90%',
+        title: 'Solución optimizada con éxito',
+        content: <>
+                    <Table dataSource={dataSource1} columns={columns} />
+                    <Divider>Error</Divider>
+                    <Row>{dataSource2}</Row>
+                 </>
+      });
+    }
+    else if(chargeResult === '') {
+      window.api.readInput().then((data) => {
+        const request = modal.success({
+          width: '75%',
+          title: 'Seleccione un archivo',
+          content: <Select
+                    style={{ width: '90%' }}
+                    placeholder="Selecciona un archivo"
+                    onChange={(val) => setChargeResult(val)}
+                    options={data.map((item) => {return {title:item, value:item}})}
+                    />,
+          footer: <div style={{textAlign:'center', margin:'1rem'}}>
+                    <Button type="primary" onClick={() => request.destroy()}>
+                      Aceptar
+                    </Button>
+                  </div>
+        });
+      });
+    } 
+    else {
+      window.api.chargeResult(chargeResult).then((data) => {
+        const mySources = data.sources;
+        const usedSources = data.inputs.slice(1);
+        const inputsSources = data.inputs.slice(0,1)[0].slice(2);
+        const inputsObjectives = data.inputs.slice(1,2)[0].slice(2);
+        
+        const columns = [
+          {
+            title: 'Fuente',
+            dataIndex: 'source',
+            key: 'source',
+          },
+          {
+            title: 'ppm',
+            dataIndex: 'ppm',
+            key: 'ppm',
+          }
+        ];
+        const dataSource1 = mySources.map((item, index) => {if(item[1]>0) return {key: index, source: item[0], ppm: parseFloat(item[1]*1000).toFixed(2)}}).filter(n => n);
+        const dataSource2 = mySources.map((item) => item[2]).filter(n => n).map((item, index) => <Col key={index} span={6}>{ion[index]}: {item} %</Col>);
+
+        const dataSource3 = {};
+        inputsSources.forEach((element, index) => {
+          dataSource3[element] = inputsObjectives[index];
+        });
+        form.setFieldsValue(dataSource3);
+
+        const dataSource4 = [];
+        usedSources.forEach((element, index) => {
+          if(element.slice(1, 2)[0]==='1') dataSource4.push(element.slice(0, 1)[0]);
+        });
+        setSources(dataSource4);
+
+        modal.success({
+          width: '90%',
+          title: 'Solución optimizada con éxito',
+          content: <>
+                      <Table dataSource={dataSource1} columns={columns} />
+                      <Divider>Error</Divider>
+                      <Row>{dataSource2}</Row>
+                   </>
+        });
+      });
+    }
+  };
+
   if(isLoading) return <div style={{textAlign:'center', padding:'2rem'}}><Spin size="large"/></div>;
   return (
       <div style={{ padding: '1rem' }}>
         {modalContextHolder}
         <Row justify={'space-around'} gutter={20} style={{marginBottom:'1rem'}}>
           <Col span={1}>
-              <Tooltip title="Ver instrucciones">
-                <Button type='ghost' onClick={showInfo}><InfoCircleOutlined style={{color:colorPrimary, fontSize:'1.3rem'}}/></Button>
-              </Tooltip>
-            </Col>
-            <Col span={16} offset={6}>
-              <div style={{fontSize:'1.5rem'}}>Optimizador de soluciones nutritivas</div>
-            </Col>
-            <Col span={1}>
-              <Tooltip title="Configuraciones avanzadas">
-                <Button type='ghost' onClick={showSettings}><SettingOutlined style={{color:colorPrimary, fontSize:'1.3rem'}}/></Button>
-              </Tooltip>
-            </Col>
+            <Tooltip title="Ver instrucciones">
+              <Button type='ghost' onClick={showInfo}><InfoCircleOutlined style={{color:colorPrimary, fontSize:'1.3rem'}}/></Button>
+            </Tooltip>
+          </Col>
+          <Col span={16} offset={6}>
+            <div style={{fontSize:'1.5rem'}}>Optimizador de soluciones nutritivas</div>
+          </Col>
+          <Col span={1}>
+            <Tooltip title="Reset">
+              <Button type='ghost' onClick={reset}><DeleteOutlined style={{color:colorPrimary, fontSize:'1.3rem'}}/></Button>
+            </Tooltip>
+          </Col>
         </Row>
         <ConfigProvider
           theme={{
@@ -195,6 +306,7 @@ export default function ESTEFANIA() {
                   allowClear
                   placeholder="Selecciona tus fuentes"
                   onChange={(val) => setSources(val)}
+                  value={sources}
                   options={template.map((item, index) => {return {title:index, value:item[0]}})}
                   />
             </Panel>
@@ -217,11 +329,23 @@ export default function ESTEFANIA() {
               </Form>
             </Panel>
           </Collapse> 
-          <div style={{textAlign:'center', padding: '1rem'}}>
-            <Button key="Optimize" type="primary" onClick={optimize}>
-                Optimizar
-            </Button>
-          </div>
+          <Row justify='space-around' style={{padding: '1rem'}}>
+            <Col span={4}>
+              <Button type="primary" onClick={optimize}>
+                  Optimizar
+              </Button>
+            </Col>
+            <Col span={4}>
+              <Button disabled={result.length===0} type="primary" onClick={() => save()}>
+                  Guardar
+              </Button>
+            </Col>
+            <Col span={4}>
+              <Button type="primary" onClick={seeResults}>
+                  {chargeResult==='' ? 'Cargar resultados' : 'Ver resultados'}
+              </Button>
+            </Col>
+          </Row>
         </ConfigProvider>
       </div>
   );

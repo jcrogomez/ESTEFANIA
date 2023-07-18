@@ -13,7 +13,7 @@ function createWindow() {
   // Create the browser window.
   const win = new BrowserWindow({
     width: 1200,
-    height: 800,
+    height: 700,
     center: true,
     //minimizable: false,
     //maximizable: false,
@@ -61,7 +61,7 @@ app.whenReady().then(() => {
 
     ipcMain.handle('read-inputs', async (event) => {
       try {
-        const resolvedPath = fs.readdirSync(path.join(__dirname, 'inputs'));
+        const resolvedPath = fs.readdirSync('inputs');
         const fileNames = resolvedPath.map((file) => file.split('.')[0]);
         return fileNames;
       } catch (error) {
@@ -101,6 +101,29 @@ app.whenReady().then(() => {
       }
     });
 
+    ipcMain.handle('chargeResult', async (event, args) => {
+      try {
+        const sources = [];
+        const inputs = [];
+        return new Promise(function (resolve) {
+          fs.createReadStream(path.join('outputs', args + '.csv'))
+          .pipe(parse({ delimiter: ",", from_line: 2 }))
+          .on("data", row => sources.push(row))
+          .on("end", () => {
+            fs.createReadStream(path.join('inputs', args + '.csv'))
+            .pipe(parse({ delimiter: ",", from_line: 1 }))
+            .on("data", row => inputs.push(row))
+            .on("end", () => resolve({sources, inputs}))
+            .on("error", () => console.log(error.message));
+          })
+          .on("error", () => console.log(error.message));
+        });
+      } catch (error) {
+        console.error('Error al leer el archivo output/' + args + '.csv', error);
+        throw error;
+      }
+    });
+
     ipcMain.handle('optimize', async (event, args) => {
       const filename = path.join('inputs', 'test.csv');
       const writableStream = fs.createWriteStream(filename);
@@ -134,7 +157,17 @@ app.whenReady().then(() => {
         console.log('FALTA SOPORTE PARA OTRAS PLATAFORMAS');
         return 'FALTA SOPORTE PARA OTRAS PLATAFORMAS';
       }
-      
+    });
+
+    ipcMain.handle('save-file', async (event, args) => {
+      if(args==='') {
+        return false;
+      }
+      else {
+        fs.rename(path.join('inputs', 'test.csv'), path.join('inputs', args + '.csv'), (e) => console.log(e));
+        fs.rename(path.join('outputs', 'test.csv'), path.join('outputs', args + '.csv'), (e) => console.log(e));
+        return true;
+      }
     });
 
   });
