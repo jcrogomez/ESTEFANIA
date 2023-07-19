@@ -1,0 +1,90 @@
+/* File: font.css */
+@font-face {
+  font-family: 'Lexend_Black';
+  src: local('Lexend_Black'),
+       url('./fonts/Lexend-Black.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lexend_Bold';
+  src: local('Lexend_Bold'),
+       url('./fonts/Lexend-Bold.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lexend_ExtraBold';
+  src: local('Lexend_ExtraBold'),
+       url('./fonts/Lexend-ExtraBold.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lexend_ExtraLight';
+  src: local('Lexend_ExtraLight'),
+       url('./fonts/Lexend-ExtraLight.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lexend_Light';
+  src: local('Lexend_Light'),
+       url('./fonts/Lexend-Light.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lexend_Medium';
+  src: local('Lexend_Medium'),
+       url('./fonts/Lexend-Medium.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lexend_Regular';
+  src: local('Lexend_Regular'),
+       url('./fonts/Lexend-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lexend_SemiBold';
+  src: local('Lexend_SemiBold'),
+       url('./fonts/Lexend-SemiBold.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lexend_Thin';
+  src: local('Lexend_Thin'),
+       url('./fonts/Lexend-Thin.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Spoof_Medium';
+  src: local('Spoof_Medium'),
+       url('./fonts/Spoof-Medium.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'London-bridge_semibold';
+  src: local('London-bridge_semibold'),
+       url('./fonts/London-bridge_semibold.otf') format('opentype');
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  font-family: 'Lexend_Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
