@@ -2,7 +2,6 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { parse } = require("csv-parse");
-//const chokidar = require('chokidar');
 const isDev = require('electron-is-dev');
 const { stringify } = require("csv-stringify");
 const { execFile } = require('child_process');
@@ -17,7 +16,7 @@ function createWindow() {
     center: true,
     //minimizable: false,
     //maximizable: false,
-    frame: false,
+    //frame: false,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: true,
@@ -61,7 +60,8 @@ app.whenReady().then(() => {
 
     ipcMain.handle('read-inputs', async (event) => {
       try {
-        const resolvedPath = fs.readdirSync('inputs');
+        const myPath = isDev ? 'inputs' : path.join('resources', 'inputs');
+        const resolvedPath = fs.readdirSync(myPath);
         const fileNames = resolvedPath.map((file) => file.split('.')[0]);
         return fileNames;
       } catch (error) {
@@ -74,7 +74,8 @@ app.whenReady().then(() => {
       try {
         const sources = [];
         return new Promise(function (resolve) {
-          fs.createReadStream(path.join('templates', 'iones.csv'))
+          const myPath = isDev ? path.join('templates', 'iones.csv') : path.join('resources', 'templates', 'iones.csv');
+          fs.createReadStream(myPath)
           .pipe(parse({ delimiter: ",", from_line: 2 }))
           .on("data", row => sources.push(row))
           .on("end", () => resolve(sources))
@@ -90,7 +91,8 @@ app.whenReady().then(() => {
       try {
         const ion = [];
         return new Promise(function (resolve) {
-          fs.createReadStream(path.join('templates', 'iones.csv'))
+          const myPath = isDev ? path.join('templates', 'iones.csv') : path.join('resources', 'templates', 'iones.csv');
+          fs.createReadStream(myPath)
           .pipe(parse({ delimiter: ",", from_line: 1 }))
           .on("data", row => resolve(row.slice(3)))
           .on("error", () => console.log(error.message));
@@ -106,11 +108,13 @@ app.whenReady().then(() => {
         const sources = [];
         const inputs = [];
         return new Promise(function (resolve) {
-          fs.createReadStream(path.join('outputs', args + '.csv'))
+          const myPath1 = isDev ? path.join('outputs', args + '.csv') : path.join('resources', 'outputs', args + '.csv');
+          fs.createReadStream(myPath1)
           .pipe(parse({ delimiter: ",", from_line: 2 }))
           .on("data", row => sources.push(row))
           .on("end", () => {
-            fs.createReadStream(path.join('inputs', args + '.csv'))
+            const myPath2 = isDev ? path.join('inputs', args + '.csv') : path.join('resources', 'inputs', args + '.csv');
+            fs.createReadStream(myPath2)
             .pipe(parse({ delimiter: ",", from_line: 1 }))
             .on("data", row => inputs.push(row))
             .on("end", () => resolve({sources, inputs}))
@@ -125,20 +129,19 @@ app.whenReady().then(() => {
     });
 
     ipcMain.handle('optimize', async (event, args) => {
-      const filename = path.join('inputs', 'test.csv');
+      const filename = isDev ? path.join('inputs', 'test.csv') : path.join('resources', 'inputs', 'test.csv');
       const writableStream = fs.createWriteStream(filename);
       const stringifier = stringify({ header: true, columns: args.columns });
       stringifier.write(args.objective);
       args.source.forEach(row => stringifier.write(row))
       stringifier.pipe(writableStream);
-
       if(os.platform()==='win32'){
         try {
           return new Promise(function (resolve) {
-            execFile(path.join('main.exe'), ['test', 'true'], (error, data) => {
+            execFile(isDev ? path.join('main.exe') : path.join('resources', 'main.exe'), ['test', 'true'], (error, data) => {
               if(error===null){
                   const result = [];
-                    fs.createReadStream(path.join('outputs', 'test.csv'))
+                    fs.createReadStream(isDev ? path.join('outputs', 'test.csv') : path.join('resources', 'outputs', 'test.csv'))
                     .pipe(parse({ delimiter: ",", from_line: 2 }))
                     .on("data", row => result.push(row))
                     .on("end", () => resolve(result))
@@ -164,8 +167,8 @@ app.whenReady().then(() => {
         return false;
       }
       else {
-        fs.rename(path.join('inputs', 'test.csv'), path.join('inputs', args + '.csv'), (e) => console.log(e));
-        fs.rename(path.join('outputs', 'test.csv'), path.join('outputs', args + '.csv'), (e) => console.log(e));
+        fs.rename(isDev ? path.join('inputs', 'test.csv') : path.join('resources', 'inputs', 'test.csv'), isDev ? path.join('inputs', args + '.csv') : path.join('resources', 'inputs', args + '.csv'), (e) => console.log(e));
+        fs.rename(isDev ? path.join('outputs', 'test.csv') : path.join('resources', 'outputs', 'test.csv'), isDev ? path.join('outputs', args + '.csv') : path.join('resources', 'outputs', args + '.csv'), (e) => console.log(e));
         return true;
       }
     });

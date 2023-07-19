@@ -1,7 +1,7 @@
 {
-  "name": "smaker",
+  "name": "estefania",
   "version": "0.1.0",
-  "description": "User interface to handle the Solution Maker by Ecolistico",
+  "description": "User interface to handle the ESTEFANIA software by Ecolistico",
   "author": "Ecolistico",
   "private": true,
   "homepage": "./",
@@ -11,7 +11,6 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "antd": "^5.3.3",
-    "chokidar": "^3.5.3",
     "cross-env": "^7.0.3",
     "csv-parse": "^5.4.0",
     "csv-stringify": "^6.4.0",
@@ -62,20 +61,25 @@
     "wait-on": "^7.0.1"
   },
   "build": {
-    "appId": "123456789",
-    "productName": "SMaker",
-    "copyright": "Test",
+    "appId": "0123456789",
+    "productName": "Estefania",
+    "copyright": "Copyright © 2023 Ecolistico",
     "files": [
       "build/**/*"
     ],
     "directories": {
       "buildResources": "build"
     },
-    "extraResources": [],
+    "extraResources": ["outputs/*", "inputs/*", "templates/*", "main.exe"],
     "win": {
       "icon": "./build/logo512.png",
       "target": [
-        "7z"
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "linux": {
