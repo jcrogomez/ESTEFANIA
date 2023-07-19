@@ -1,2 +1,41 @@
-inputs\
-outputs\
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# src files
+/inputs
+/outputs
+/build
+/dist
+
+# UPX
+/upx-4.0.2-win64
+
+# Pyton windows exe file
+# It is important to compile exe with pyinstaller using venv
+# Using conda envs it is not recommended because includes extra libraries not needed that increase exe size
+# Also it is recomended to use the latest version of UPX to compress more the executable file
+# main.exe
+
+# testing
+/coverage
+
+# production
+/build
+
+# electron
+/dist
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
