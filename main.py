@@ -11,7 +11,8 @@ arglist = sys.argv
 ## Funciones
 def iones():
     nombre = 'iones'
-    path = os.getcwd() + '/templates/'
+    #path = os.getcwd() + '/templates/'
+    path = os.path.dirname(os.path.realpath(__file__)) + '/templates/'
     dict_csv = { os.path.basename(x).split('.')[0]: path + '/' + x for x in os.listdir(path) if x.endswith('.csv') }
     ion_df = pd.read_csv(dict_csv[nombre]).fillna(0)
 
@@ -29,7 +30,8 @@ def iones():
 
 
 def objetivo(nombre):
-    path = os.getcwd() + '/inputs/'
+    #path = os.getcwd() + '/inputs/'
+    path = os.path.dirname(os.path.realpath(__file__)) + '/inputs/'
     dict_csv = { os.path.basename(x).split('.')[0]: path + '/' + x for x in os.listdir(path) if x.endswith('.csv') }
     if(dict_csv.get(nombre)!=None):
         df = pd.read_csv(dict_csv[nombre]).fillna(0)
@@ -86,7 +88,8 @@ def estefania(variedad, guardar=False):
 
         resultados = d.join(e)
         if guardar == 'True' or guardar == 'true' or guardar == '1':
-            destino = os.getcwd() + '/outputs/'
+            #destino = os.getcwd() + '/outputs/'
+            destino = os.path.dirname(os.path.realpath(__file__)) + '/outputs/'
             resultados.to_csv(destino + variedad + '.csv', index=False)
         return resultados
     else: 
@@ -100,3 +103,10 @@ if(len(arglist)>2): estefania(arglist[1], arglist[2])
 elif(len(arglist)>1): estefania(arglist[1])
 else: print('Faltan especificar el nombre del archivo y si se desea guardar el archivo de salida')
 
+Command failed: /Users/juancarlosromero/Development/ESTEFANIA/dist/mac-arm64/Estefania.app/Contents/Resources/main test true
+Traceback (most recent call last):
+  File "main.py", line 102, in <module>
+  File "main.py", line 68, in estefania
+  File "main.py", line 16, in iones
+FileNotFoundError: [Errno 2] No such file or directory: '/private/var/folders/62/2c_zxy2s73z311_w55sx92r00000gn/T/_MEIiLzIv0/templates/'
+[47363] Failed to execute script 'main' due to unhandled exception!

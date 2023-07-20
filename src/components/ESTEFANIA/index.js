@@ -147,6 +147,7 @@ export default function ESTEFANIA() {
         'Na+'
       ];
       window.api.optimize({source: mySources, objective: formValues, columns}).then((data) => {
+        console.log('OPTIMIZE RESULTS', data);
         setIsLoading(false);
         setResult(data);
       });

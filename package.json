@@ -30,9 +30,11 @@
     "eject": "react-scripts eject",
     "start-electron": "nodemon --watch ./public/electron.js --watch ./public/preload.js --exec \"electron .\"",
     "dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run start-electron\"",
+    "dev1": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000; npm run start-electron\"",
     "pack-app": "npm run build && electron-builder --dir",
     "pack-build": "electron-builder --dir",
     "build-electron": "npm run build && electron-builder",
+    "build-e": "electron-builder",
     "package": "electron-builder build --win -c.extraMetadata.main=build/electron.js --publish never"
   },
   "eslintConfig": {
@@ -70,7 +72,7 @@
     "directories": {
       "buildResources": "build"
     },
-    "extraResources": ["outputs/*", "inputs/*", "templates/*", "main.exe"],
+    "extraResources": ["outputs/*", "inputs/*", "templates/*", "main.exe", "main"],
     "win": {
       "icon": "./build/logo512.png",
       "target": [
@@ -89,6 +91,9 @@
           "armv7l"
         ]
       }
+    },
+    "mac":{
+      "icon": "./build/logo512.png"
     }
   }
 }

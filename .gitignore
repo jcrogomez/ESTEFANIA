@@ -14,11 +14,10 @@
 # UPX
 /upx-4.0.2-win64
 
-# Pyton windows exe file
-# It is important to compile exe with pyinstaller using venv
-# Using conda envs it is not recommended because includes extra libraries not needed that increase exe size
-# Also it is recomended to use the latest version of UPX to compress more the executable file
-# main.exe
+.DS_Store
+/bin
+/lib
+pyvenv.cfg
 
 # testing
 /coverage

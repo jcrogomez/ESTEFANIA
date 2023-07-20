@@ -34,7 +34,10 @@ function createWindow() {
       : `file://${path.join(__dirname, '../build/index.html')}` // Loading build file if in production
   );
 
-  win.setIcon(path.join(__dirname, 'favicon.ico'));
+  const myIcon = os.platform()==='win32' ? 'favicon.ico' : 'logo512.png';
+
+  win.setIcon(path.join(__dirname, myIcon));
+  app.dock.setIcon(path.join(__dirname, myIcon));
 
   // Open the DevTools.
   if (isDev) {
@@ -46,21 +49,13 @@ function createWindow() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-    createWindow();
-  
-    app.on('activate', function () {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (BrowserWindow.getAllWindows().length === 0) createWindow()
-    });
-
     ipcMain.on('test-send', (event, args) => {
       console.log(fs.readdirSync(__dirname));
     });
 
     ipcMain.handle('read-inputs', async (event) => {
       try {
-        const myPath = isDev ? 'inputs' : path.join('resources', 'inputs');
+        const myPath = isDev ? 'inputs' : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'inputs');
         const resolvedPath = fs.readdirSync(myPath);
         const fileNames = resolvedPath.map((file) => file.split('.')[0]);
         return fileNames;
@@ -74,7 +69,7 @@ app.whenReady().then(() => {
       try {
         const sources = [];
         return new Promise(function (resolve) {
-          const myPath = isDev ? path.join('templates', 'iones.csv') : path.join('resources', 'templates', 'iones.csv');
+          const myPath = isDev ? path.join('templates', 'iones.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'templates', 'iones.csv');
           fs.createReadStream(myPath)
           .pipe(parse({ delimiter: ",", from_line: 2 }))
           .on("data", row => sources.push(row))
@@ -91,7 +86,7 @@ app.whenReady().then(() => {
       try {
         const ion = [];
         return new Promise(function (resolve) {
-          const myPath = isDev ? path.join('templates', 'iones.csv') : path.join('resources', 'templates', 'iones.csv');
+          const myPath = isDev ? path.join('templates', 'iones.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'templates', 'iones.csv');
           fs.createReadStream(myPath)
           .pipe(parse({ delimiter: ",", from_line: 1 }))
           .on("data", row => resolve(row.slice(3)))
@@ -108,12 +103,12 @@ app.whenReady().then(() => {
         const sources = [];
         const inputs = [];
         return new Promise(function (resolve) {
-          const myPath1 = isDev ? path.join('outputs', args + '.csv') : path.join('resources', 'outputs', args + '.csv');
+          const myPath1 = isDev ? path.join('outputs', args + '.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'outputs', args + '.csv');
           fs.createReadStream(myPath1)
           .pipe(parse({ delimiter: ",", from_line: 2 }))
           .on("data", row => sources.push(row))
           .on("end", () => {
-            const myPath2 = isDev ? path.join('inputs', args + '.csv') : path.join('resources', 'inputs', args + '.csv');
+            const myPath2 = isDev ? path.join('inputs', args + '.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'inputs', args + '.csv');
             fs.createReadStream(myPath2)
             .pipe(parse({ delimiter: ",", from_line: 1 }))
             .on("data", row => inputs.push(row))
@@ -129,7 +124,7 @@ app.whenReady().then(() => {
     });
 
     ipcMain.handle('optimize', async (event, args) => {
-      const filename = isDev ? path.join('inputs', 'test.csv') : path.join('resources', 'inputs', 'test.csv');
+      const filename = isDev ? path.join('inputs', 'test.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'inputs', 'test.csv');
       const writableStream = fs.createWriteStream(filename);
       const stringifier = stringify({ header: true, columns: args.columns });
       stringifier.write(args.objective);
@@ -156,7 +151,30 @@ app.whenReady().then(() => {
           console.error('Error al leer el archivo template/iones.csv', error);
           throw error;
         }
-      } else {
+      } 
+      else if(os.platform()==='darwin') {
+        try {
+          return new Promise(function (resolve) {
+            execFile(isDev ? './main' : path.join(process.resourcesPath, 'main'), ['test', 'true'], (error, data) => {
+              if(error===null){
+                  const result = [];
+                    fs.createReadStream(isDev ? path.join('outputs', 'test.csv') : path.join(process.resourcesPath, 'outputs', 'test.csv'))
+                    .pipe(parse({ delimiter: ",", from_line: 2 }))
+                    .on("data", row => result.push(row))
+                    .on("end", () => resolve(result))
+                    .on("error", () => console.log(error.message));
+              }
+              else {
+                resolve({error: error, errorMsg: 'Error en la corrida de optimización'});
+              }
+            });
+          });
+        } catch(error) {
+          console.error('Error al leer el archivo template/iones.csv', error);
+          throw error;
+        }
+      }
+      else {
         console.log('FALTA SOPORTE PARA OTRAS PLATAFORMAS');
         return 'FALTA SOPORTE PARA OTRAS PLATAFORMAS';
       }
@@ -167,12 +185,22 @@ app.whenReady().then(() => {
         return false;
       }
       else {
-        fs.rename(isDev ? path.join('inputs', 'test.csv') : path.join('resources', 'inputs', 'test.csv'), isDev ? path.join('inputs', args + '.csv') : path.join('resources', 'inputs', args + '.csv'), (e) => console.log(e));
-        fs.rename(isDev ? path.join('outputs', 'test.csv') : path.join('resources', 'outputs', 'test.csv'), isDev ? path.join('outputs', args + '.csv') : path.join('resources', 'outputs', args + '.csv'), (e) => console.log(e));
+        fs.rename(isDev ? path.join('inputs', 'test.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'inputs', 'test.csv'), isDev ? path.join('inputs', args + '.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'inputs', args + '.csv'), (e) => console.log(e));
+        fs.rename(isDev ? path.join('outputs', 'test.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'outputs', 'test.csv'), isDev ? path.join('outputs', args + '.csv') : path.join(os.platform()==='win32' ? 'resources' : process.resourcesPath, 'outputs', args + '.csv'), (e) => console.log(e));
         return true;
       }
     });
 
+    createWindow();
+  
+    app.on('activate', function () {
+      // On macOS it's common to re-create a window in the app when the
+      // dock icon is clicked and there are no other windows open.
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+        console.log('RESET');
+      }
+    });
   });
 
 // Quit when all windows are closed, except on macOS. There, it's common
